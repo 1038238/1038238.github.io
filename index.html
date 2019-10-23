@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+    <!--<script src="https://unpkg.com/@tensorflow/tfjs"></script>-->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2.8"> </script>  <!--later versions cannot load batch norm layers due to a bug-->
+    <!--<script src="./tfjspackage/dist/tf.min.js"> </script>-->
+    
+    <!-- Loading overlay https://sdkcarlos.github.io/sites/holdon.html -->
+    <script src="assets/jquery-2.2.4.min.js"></script>
+    <link href="assets/HoldOn.min.css" rel="stylesheet">
+    <script src="assets/HoldOn.min.js"></script>
+    <style>
+        * {
+            font-family:Segoe UI Semibold,Open Sans,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+            box-sizing: border-box;
+        }
+        .hidden {
+            display: none;
+        }
+        #heading {
+            text-align:center;
+        }
+        #p0 {
+            font-weight: bold;
+        }
+        #inference-time {
+            padding: 10px;
+            text-align: center;
+        }
+        #description {
+            text-align:center;
+            max-width: 860px;
+            margin: auto;
+            padding-bottom: 10px;
+        }
+        #prompt {
+            text-align:center;
+            font-size: 1.2em;
+        }
+        .label {
+            min-width: 90px;
+            text-align:right;
+        }
+        .results {
+            font-size: 1.3em;
+            margin: 10 0 5 0;
+            display:flex;
+            flex-direction: column;
+        }
+        .probability {
+            margin-left: 10px;
+            width: 90px;
+            text-align:right;
+        }
+        .prediction {
+            width: auto;
+            display:flex;
+            flex-direction: row;
+            justify-content:center;
+            align-items:center;
+        }
+        .flexbox {
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-evenly;
+        }
+        .container {
+            padding: 0;
+            background-color: #f4f4f4;
+            margin: auto;
+            max-width: 600px;
+            justify-content:center;
+            align-items:center;
+            border-style: solid;
+            border-width: thin;
+        }
+        .selected {
+            padding: 0;
+            border: 2px solid teal;
+        }
+        .item {
+            padding: 1px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .centerImg {
+		  display: block;
+		  margin-left: auto;
+		  margin-right: auto;
+		  width: 50%;
+		  border-style: solid;
+          border-width: thin;
+          cursor: pointer;
+		}
+		
+		.centerImg:hover {
+			background-color:#5cbf2a;
+		}
+		.centerImg:active {
+			position:relative;
+			top:1px;
+		}
+		
+		.myButton {
+			background-color:#768d87;
+			border-radius:28px;
+			border:1px solid #566963;
+			display:inline-block;
+			cursor:pointer;
+			color:#ffffff;
+			font-family:Arial;
+			font-size:17px;
+			padding:16px 31px;
+			text-decoration:none;
+			text-shadow:0px 1px 0px #0a0a0a;
+		}
+		.myButton:hover {
+			background-color:#6c7c7c;
+		}
+		.myButton:active {
+			position:relative;
+			top:1px;
+		}
+
+        
+
+
+        body {
+            padding: 0;
+            margin: 0;
+            background-color: #ccc7b9;
+        }
+        footer {
+            padding: 0;
+            color: white;
+            display:flex;
+            background-color: #1a1423;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 25px;
+            width: 100%;
+            justify-content:center;
+            align-items:center;
+        }
+
+    </style>
+  </head>
+  <body>
+    <h1 id="heading">MobileNet in the Browser</h1>
+    <p id="description">The MobileNet v2 neural network currently running in your browser was trained and pruned in PyTorch, then quantized to 8-bit weights and converted to Tensorflow.js via Onnx and Keras.</p>
+    <br>
+    <div class="container">
+        <div class="results">
+            <div id="inference-time"></div>
+            <div id="p0" class="prediction">
+                <div class="label"></div>
+                <div class="probability"></div>
+            </div>
+            <div id="p1" class="prediction">
+                <div class="label"></div>
+                <div class="probability"></div>
+            </div>
+            <div id="p2" class="prediction">
+                <div class="label"></div>
+                <div class="probability"></div>
+            </div>
+        </div>
+        <div id="prompt">Click to classify:</div>
+        <br><br>
+        <!--
+        <div class="flexbox">
+            <img class="item" src="images/cat.jpg" onclick="classifyImage(this)" width="156" height="156" />
+            <img class="item" src="images/dog.jpg" onclick="classifyImage(this)" width="156" height="156" />
+            <img class="item" src="images/bird.jpg" onclick="classifyImage(this)" width="156" height="156" />
+            <img class="item" src="images/ship.jpg" onclick="classifyImage(this)" width="156" height="156" />
+            <img class="item" src="images/truck.jpg" onclick="classifyImage(this)" width="156" height="156" />
+            <img class="item" src="images/springbok.jpg" onclick="classifyImage(this)" width="156" height="156" />
+            <img class="item" src="images/frog.jpg" onclick="classifyImage(this)" width="156" height="156" />
+            <img class="item" src="images/horse.jpg" onclick="classifyImage(this)" width="156" height="156" />
+            <img class="item" src="images/airplane.jpg" onclick="classifyImage(this)" width="156" height="156" />
+            <img class="item" src="images/car.jpg" onclick="classifyImage(this)" width="156" height="156" />
+        </div>
+        -->
+        <img id="img" src="images/image_7.jpg" onclick="classifyImage(this)" height="256" class="centerImg"/>
+    	<br><br>
+    	<button onclick="newImage()" style="display: block; margin: 0 auto;" class="myButton">New Image</button>
+    	<br><br>
+    </div>
+    
+    <!-- Load index.js after the content of the page -->
+    <script src="assets/index.js"></script>
+    <footer>Kimessha Paupamah (1038238)</footer>
+  </body>
+</html>
